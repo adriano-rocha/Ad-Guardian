@@ -33,3 +33,11 @@ ad-guardian/
 
 ## Autor
 Adriano Rocha — [GitHub](https://github.com/adriano-rocha)
+
+
+
+4078 4300 3174 1315
+
+07/29
+
+541
