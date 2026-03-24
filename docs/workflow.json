@@ -1,0 +1,189 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -96
+      ],
+      "id": "4dacb155-67e1-476b-9b08-208fb968cb9f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1I7Xp2zzCdbo6-G0WCSc3LM0aEb5knjZ1IrXsFwZ9x8U",
+          "mode": "list",
+          "cachedResultName": "Ad-Guardian_Controle",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1I7Xp2zzCdbo6-G0WCSc3LM0aEb5knjZ1IrXsFwZ9x8U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1I7Xp2zzCdbo6-G0WCSc3LM0aEb5knjZ1IrXsFwZ9x8U/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "b3c39557-c0e7-4eb1-9cb1-ceedd7d21987",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nPWKqUTDWa9lDIla",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "8233791045",
+        "text": "={{ $json.mensagem }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "43c81c1a-a719-48a2-94d9-668bee184316",
+      "name": "Send a text message",
+      "webhookId": "0e6fc767-6f94-45cb-886d-235c8986bced",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "kTK3uFRPHPePPh5c",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ROAS_MINIMO = 1.5;\nconst ROAS_META = 3.0;\nconst GASTO_MINIMO = 30.0;\n\nfunction calcularMetricas(dados) {\n  const investimento = parseFloat(dados.Investimento || 0);\n  const cliques = parseInt(dados.Cliques || 0);\n  const vendas = parseInt(dados.Vendas || 0);\n  const valor_venda = parseFloat(dados.Valor_Venda || 0);\n  const receita = vendas * valor_venda;\n  const roas = investimento > 0 ? Math.round((receita / investimento) * 100) / 100 : 0;\n  const cpc = cliques > 0 ? Math.round((investimento / cliques) * 100) / 100 : 0;\n  const taxa_conversao = cliques > 0 ? Math.round((vendas / cliques) * 100 * 100) / 100 : 0;\n  const lucro_liquido = Math.round((receita - investimento) * 100) / 100;\n  return {\n    campanha: dados.Campanha || \"N/A\",\n    data: dados.Data || \"N/A\",\n    investimento, cliques, vendas,\n    receita: Math.round(receita * 100) / 100,\n    roas, cpc, taxa_conversao, lucro_liquido\n  };\n}\n\nconst resultados = [];\n\nfor (const item of $input.all()) {\n  const metricas = calcularMetricas(item.json);\n  const roas = metricas.roas;\n  const investimento = metricas.investimento;\n  const lucro = metricas.lucro_liquido;\n\n  let status, emoji, acao;\n  if (roas < ROAS_MINIMO && investimento >= GASTO_MINIMO) {\n    [status, emoji, acao] = [\"Critico\", \"🔴\", \"PAUSAR imediatamente\"];\n  } else if (roas < ROAS_META && investimento >= GASTO_MINIMO) {\n    [status, emoji, acao] = [\"Atencao\", \"🟡\", \"Revisar criativos e segmentacao\"];\n  } else if (roas >= ROAS_META && lucro > 0) {\n    [status, emoji, acao] = [\"Escalavel\", \"🟢\", \"ESCALAR - aumentar orcamento\"];\n  } else {\n    [status, emoji, acao] = [\"Monitorar\", \"🔵\", \"Aguardar mais dados\"];\n  }\n\n  const mensagem = `${emoji} AD-GUARDIAN ALERTA\nCampanha: ${metricas.campanha}\nData: ${metricas.data}\nInvestimento: R$ ${metricas.investimento.toFixed(2)}\nCliques: ${metricas.cliques}\nVendas: ${metricas.vendas}\nReceita: R$ ${metricas.receita.toFixed(2)}\nROAS: ${metricas.roas}x\nCPC: R$ ${metricas.cpc.toFixed(2)}\nConv. Rate: ${metricas.taxa_conversao}%\nLucro: R$ ${metricas.lucro_liquido.toFixed(2)}\nSTATUS: ${status}\nACAO: ${acao}`;\n\n  resultados.push({\n    json: { status, emoji, acao, mensagem, metricas }\n  });\n}\n\nreturn resultados;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        -96
+      ],
+      "id": "c05c27df-a543-4ebb-a6f5-8d8ef91e64a0",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0484cacd-dbcf-43f9-ac2e-704ea28b6fe9",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "Escalavel",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        -96
+      ],
+      "id": "f08f4aae-1fd2-4386-a88f-0af7679ff13a",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e410f5c5-c3aa-4a9c-aa2c-e245d7268c13",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "11cdba83017d11ccaf6e74d22155a16d099f61d114b4924cd740d55a39a9918f"
+  },
+  "id": "DvPesDu47Md9Z4t9",
+  "tags": []
+}
