@@ -1,8 +1,3 @@
-New-Item .gitignore -ItemType File
-```
-
-Abre o `.gitignore` no VS Code e cola isso dentro:
-```
 __pycache__/
 *.pyc
 .env
